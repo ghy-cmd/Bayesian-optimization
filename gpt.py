@@ -61,7 +61,7 @@ classifier = NeuralNetClassifier(
     train_split=None,
     verbose=1,
     device=device,
-    max_epochs=10
+    max_epochs=5
 )
 
 # 初始化 ActiveLearner
@@ -74,19 +74,21 @@ learner = ActiveLearner(
 
 X_test, y_test = load_data(cifar10_test)
 # 设置目标准确率阈值和不确定度阈值
-target_accuracy = 0.60
+target_accuracy = 0.70
 uncertainty_threshold = 0.4
 
 # 主动学习循环
 # 开始主动学习
 performance_history = []
-n_instances = 100  # 每次选择的样本数
-with open('performance_history.log', 'w') as log_file:    
-    while learner.score(X_test.numpy(), y_test.numpy()) < target_accuracy:
+n_instances = 1000  # 每次选择的样本数
+i=0
+with open('performance_history_{}_{}_{}.log'.format(target_accuracy,uncertainty_threshold,n_instances), 'w') as log_file:    
+    while learner.score(X_test.numpy(), y_test.numpy()) < target_accuracy and i<20:
         # query_idx, query_instance = learner.query(X_pool.numpy(),n_instances=2000)
         # stream_idx = np.random.choice(range(len(X_pool)))
         # X_stream = X_pool[stream_idx].unsqueeze(0).numpy()
         # y_stream = np.array([y_pool[stream_idx].item()])
+        i=i+1
         stream_indices = np.random.choice(range(len(X_pool)), size=n_instances, replace=False)
         X_stream = X_pool[stream_indices].numpy()
         y_stream = np.array([y_pool[idx].item() for idx in stream_indices])
@@ -125,7 +127,7 @@ with open('performance_history.log', 'w') as log_file:
 final_accuracy = learner.score(X_test.numpy(), y_test.numpy())
 print(f'最终测试集准确率: {final_accuracy * 100:.2f}%')
 # 保存准确率信息到文件
-with open('performance_history.log', 'a') as log_file:
+with open('performance_history_{}_{}_{}.log'.format(target_accuracy,uncertainty_threshold,n_instances), 'a') as log_file:
     log_file.write(f'最终测试集准确率: {final_accuracy * 100:.2f}%\n')
 
 # 绘制 performance_history
@@ -135,5 +137,5 @@ plt.title('Model Performance over Time')
 plt.xlabel('Number of Queries')
 plt.ylabel('Accuracy')
 plt.grid(True)
-plt.savefig('performance_history.png')
+plt.savefig('performance_history_{}_{}_{}.png'.format(target_accuracy,uncertainty_threshold,n_instances))
 plt.show()
